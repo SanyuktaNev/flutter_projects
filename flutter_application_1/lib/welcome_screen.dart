@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+
 import 'profile_page.dart';
 import 'login_screen.dart';
 import 'call_page.dart';
@@ -12,25 +12,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: "Dashboard",
-      theme: ThemeData(
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        primaryColor: const Color(0xFF9C27B0),
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF9C27B0),
-          foregroundColor: Colors.white,
-          elevation: 4,
-        ),
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: const Color(0xFF9C27B0),
-          secondary: const Color(0xFFE1BEE7),
-        ),
-      ),
-      home: const Dashboard(),
-    );
+    return const Dashboard();
   }
 }
 
@@ -68,9 +50,9 @@ class MyDrawer extends StatelessWidget {
             title: const Text('Logout'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                MaterialPageRoute(builder: (context) =>  LoginScreen()),
               );
             },
           ),
@@ -104,13 +86,13 @@ class Dashboard extends StatelessWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: const Center(child: Text("Dashboard")),
+          backgroundColor: const Color(0xFF9C27B0),
         ),
         drawer: const MyDrawer(),
 
         body: SingleChildScrollView(
           child: Column(
             children: [
-              // ------------------ CAROUSEL ------------------
               CarouselSlider(
                 options: CarouselOptions(
                   height: 400,
@@ -144,7 +126,6 @@ class Dashboard extends StatelessWidget {
 
               const SizedBox(height: 50),
 
-             
               LayoutBuilder(
                 builder: (context, constraints) {
                   double cardWidth = constraints.maxWidth / 3 - 40;
@@ -170,11 +151,11 @@ class Dashboard extends StatelessWidget {
   }
 
   Widget _buildCard(
-      String title,
-      IconData icon,
-      double width,
-      double height,
-      BuildContext context,
+    String title,
+    IconData icon,
+    double width,
+    double height,
+    BuildContext context,
   ) {
     return Card(
       elevation: 5,
@@ -186,11 +167,20 @@ class Dashboard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           if (title == "Call") {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const CallPage()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CallPage())
+            );
           } else if (title == "Visit") {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const VisitPage()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VisitPage())
+            );
           } else if (title == "Task") {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const TaskPage()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TaskPage())
+            );
           }
         },
         splashColor: const Color.fromARGB(255, 184, 33, 243).withAlpha(30),

@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'login_screen.dart';
 import 'signup_screen.dart';
 import 'welcome_screen.dart';
+import 'package:flutter_application_1/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -27,9 +34,11 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const Splash2(),
+
+    
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
+        '/login': (context) =>  LoginScreen(),
+        '/signup': (context) => SignupScreen(),
         '/welcome': (context) => const WelcomeScreen(),
       },
     );
@@ -45,14 +54,13 @@ class Splash2 extends StatelessWidget {
       splash: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // App logo
           Image.asset(
-            'assets/my_assets.png',
+            'assets/my_assets.png',   
             height: 130,
             fit: BoxFit.contain,
           ),
           const SizedBox(height: 25),
-          // App name text
+
           Text(
             "Welcome to MyApp",
             style: GoogleFonts.poppins(
@@ -61,8 +69,10 @@ class Splash2 extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+
           const SizedBox(height: 8),
-          // Subtitle / Tagline
+
+          
           Text(
             "Registration Screen",
             style: GoogleFonts.poppins(
@@ -72,7 +82,8 @@ class Splash2 extends StatelessWidget {
           ),
         ],
       ),
-      nextScreen: const LoginScreen(),
+
+      nextScreen:  LoginScreen(),
       backgroundColor: const Color(0xFF9C27B0),
       splashTransition: SplashTransition.fadeTransition,
       duration: 2500,
