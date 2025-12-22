@@ -83,11 +83,20 @@ class Dashboard extends StatelessWidget {
         ),
       ),
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color.fromARGB(0, 243, 239, 239),
         appBar: AppBar(
-          title: const Center(child: Text("Dashboard")),
-          backgroundColor: const Color(0xFF9C27B0),
-        ),
+  title: const Center(
+    child: Text(
+      "Dashboard",
+      style: TextStyle(color: Colors.white), // ✅ Title text white
+    ),
+  ),
+  backgroundColor: const Color(0xFF9C27B0),
+  iconTheme: const IconThemeData(
+    color: Colors.white, // ✅ Drawer icon (hamburger) color white
+  ),
+),
+
         drawer: const MyDrawer(),
 
         body: SingleChildScrollView(

@@ -1,10 +1,9 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'welcome_screen.dart';
 
@@ -22,7 +21,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController genderController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
 
-  String? profileImageUrl;
+  File? profileImageFile; // store local image
   bool isLoading = true;
 
   @override
@@ -30,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     fetchUserData();
   }
+
   Future<void> fetchUserData() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
@@ -39,42 +39,52 @@ class _ProfilePageState extends State<ProfilePage> {
     if (doc.exists) {
       var data = doc.data() as Map<String, dynamic>;
 
+      // If local image path exists, load it
+      File? localImage;
+      if (data['profileImagePath'] != null) {
+        localImage = File(data['profileImagePath']);
+        if (!localImage.existsSync()) {
+          localImage = null; // file missing
+        }
+      }
+
       setState(() {
         firstnameController.text = data['firstname'] ?? '';
         lastnameController.text = data['lastname'] ?? '';
         emailController.text = data['email'] ?? '';
         genderController.text = data['gender'] ?? '';
         cityController.text = data['city'] ?? '';
-        profileImageUrl = data['profileImage'];
+        profileImageFile = localImage;
+        isLoading = false;
+      });
+    } else {
+      setState(() {
         isLoading = false;
       });
     }
   }
 
-  Future<void> pickAndUploadImage() async {
-    final ImagePicker picker = ImagePicker();
+  Future<void> pickAndSaveImage() async {
+    final picker = ImagePicker();
     final XFile? image =
         await picker.pickImage(source: ImageSource.gallery);
 
     if (image == null) return;
 
-    String uid = FirebaseAuth.instance.currentUser!.uid;
-
-    Reference ref = FirebaseStorage.instance
-        .ref()
-        .child('profile_images')
-        .child('$uid.jpg');
-
-    await ref.putFile(File(image.path));
-    String downloadUrl = await ref.getDownloadURL();
+    // Save image to app's local directory
+    final appDir = await getApplicationDocumentsDirectory();
+    final savedImage = await File(image.path)
+        .copy('${appDir.path}/${FirebaseAuth.instance.currentUser!.uid}.png');
 
     setState(() {
-      profileImageUrl = downloadUrl;
+      profileImageFile = savedImage;
     });
 
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      'profileImage': downloadUrl,
-    });
+    // Save local path in Firestore
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({'profileImagePath': savedImage.path});
   }
 
   Future<void> saveProfileChanges() async {
@@ -86,7 +96,8 @@ class _ProfilePageState extends State<ProfilePage> {
       'gender': genderController.text.trim(),
       'city': cityController.text.trim(),
     });
-
+    
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Profile updated successfully")),
     );
@@ -129,9 +140,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 const Text(
                   "My Profile",
                   style: TextStyle(
@@ -140,22 +149,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 20),
                 GestureDetector(
-                  onTap: pickAndUploadImage,
+                  onTap: pickAndSaveImage,
                   child: CircleAvatar(
                     radius: 55,
-                    backgroundImage: profileImageUrl != null
-                        ? NetworkImage(profileImageUrl!)
-                        : const AssetImage(
-                                'assets/default_avatar.png')
-                            as ImageProvider,
+                    backgroundImage: profileImageFile != null
+                        ? FileImage(profileImageFile!) as ImageProvider
+                        : const AssetImage('assets/default_avatar.png'),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
                 Card(
                   elevation: 10,
                   shape: RoundedRectangleBorder(
@@ -190,20 +194,15 @@ class _ProfilePageState extends State<ProfilePage> {
                         ElevatedButton(
                           onPressed: saveProfileChanges,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color(0xFF9C27B0),
-                            minimumSize:
-                                const Size(double.infinity, 50),
+                            backgroundColor: const Color(0xFF9C27B0),
+                            minimumSize: const Size(double.infinity, 50),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: const Text(
                             "Save Changes",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18),
+                            style: TextStyle(color: Colors.white, fontSize: 18),
                           ),
                         ),
                       ],
@@ -217,6 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
   Widget buildField({
     required TextEditingController controller,
     required String label,
@@ -235,8 +235,7 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(12),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide:
-                const BorderSide(color: Colors.purple, width: 2),
+            borderSide: const BorderSide(color: Colors.purple, width: 2),
             borderRadius: BorderRadius.circular(12),
           ),
         ),

@@ -9,22 +9,22 @@ class TaskPage extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF9C27B0), 
-          title: const Center(
-            child: Text(
-              "Task Tabs",
-              style: TextStyle(
-                color: Colors.white,               
-                fontWeight: FontWeight.bold,
-              ),
+          backgroundColor: const Color(0xFF9C27B0),
+          iconTheme: const IconThemeData(
+            color: Colors.white, // ✅ Back button color
+          ),
+          title: const Text(
+            "Task Tabs",
+            style: TextStyle(
+              color: Colors.white, // ✅ Title text color
+              fontWeight: FontWeight.bold,
             ),
           ),
-
+          centerTitle: true,
           bottom: const TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-
             tabs: [
               Tab(
                 iconMargin: EdgeInsets.only(bottom: 2),
@@ -44,7 +44,6 @@ class TaskPage extends StatelessWidget {
             ],
           ),
         ),
-
         body: const TabBarView(
           children: [
             Center(

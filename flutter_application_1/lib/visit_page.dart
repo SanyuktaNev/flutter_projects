@@ -9,41 +9,42 @@ class VisitPage extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF9C27B0), 
-          title: const Center(
-            child: Text(
-              "Visit Tabs",
-              style: TextStyle(
-                color: Colors.white,                
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+  backgroundColor: const Color(0xFF9C27B0),
+  iconTheme: const IconThemeData(
+    color: Colors.white, // ✅ Back button color
+  ),
+  title: const Text(
+    "Visit Tabs",
+    style: TextStyle(
+      color: Colors.white, // ✅ Title text color
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  centerTitle: true,
+  bottom: const TabBar(
+    indicatorColor: Colors.white,
+    labelColor: Colors.white,
+    unselectedLabelColor: Colors.white70,
+    tabs: [
+      Tab(
+        iconMargin: EdgeInsets.only(bottom: 2),
+        icon: Icon(Icons.call_made, color: Colors.white),
+        text: "Today's Visit",
+      ),
+      Tab(
+        iconMargin: EdgeInsets.only(bottom: 2),
+        icon: Icon(Icons.pending_actions, color: Colors.white),
+        text: "Pending Visit",
+      ),
+      Tab(
+        iconMargin: EdgeInsets.only(bottom: 2),
+        icon: Icon(Icons.calendar_month, color: Colors.white),
+        text: "Calendar Visit",
+      ),
+    ],
+  ),
+),
 
-          bottom: const TabBar(
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-
-            tabs: [
-              Tab(
-                iconMargin: EdgeInsets.only(bottom: 2),
-                icon: Icon(Icons.call_made, color: Colors.white),
-                text: "Today's Visit",
-              ),
-              Tab(
-                iconMargin: EdgeInsets.only(bottom: 2),
-                icon: Icon(Icons.pending_actions, color: Colors.white),
-                text: "Pending Visit",
-              ),
-              Tab(
-                iconMargin: EdgeInsets.only(bottom: 2),
-                icon: Icon(Icons.calendar_month, color: Colors.white),
-                text: "Calendar Visit",
-              ),
-            ],
-          ),
-        ),
 
         body: const TabBarView(
           children: [

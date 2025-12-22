@@ -3,17 +3,23 @@ import 'welcome_screen.dart';
 import 'signup_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  Future<void> loginUser(BuildContext context) async {
+  Future<void> loginUser() async {
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
       );
@@ -26,6 +32,7 @@ class LoginScreen extends StatelessWidget {
         password: password,
       );
 
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -33,6 +40,7 @@ class LoginScreen extends StatelessWidget {
         ),
       );
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Login failed")),
       );
@@ -91,7 +99,7 @@ class LoginScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         TextField(
-                          controller: emailController, // <-- added
+                          controller: emailController,
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.email_outlined, color: Colors.purple),
                             labelText: 'Email',
@@ -108,7 +116,7 @@ class LoginScreen extends StatelessWidget {
                         const SizedBox(height: 20),
 
                         TextField(
-                          controller: passwordController, // <-- added
+                          controller: passwordController,
                           obscureText: true,
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.lock_outline, color: Colors.purple),
@@ -126,7 +134,7 @@ class LoginScreen extends StatelessWidget {
                         const SizedBox(height: 30),
 
                         ElevatedButton(
-                          onPressed: () => loginUser(context),
+                          onPressed: loginUser,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF9C27B0),
                             minimumSize: const Size(double.infinity, 50),
