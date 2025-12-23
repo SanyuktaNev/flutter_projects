@@ -13,14 +13,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  
   final User currentUser = FirebaseAuth.instance.currentUser!;
-
- 
   final TextEditingController textController = TextEditingController();
 
-  
   void signOut() {
     FirebaseAuth.instance.signOut();
   }
@@ -32,8 +27,6 @@ class _HomePageState extends State<HomePage> {
         'Message': textController.text,
         'TimeStamp': Timestamp.now(),
       });
-
-      
       textController.clear();
     }
   }
@@ -51,28 +44,23 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-
       body: Column(
         children: [
-
-          
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection("User Posts")
                   .orderBy("TimeStamp", descending: false)
                   .snapshots(),
-
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   return ListView.builder(
                     itemCount: snapshot.data!.docs.length,
                     itemBuilder: (context, index) {
                       final post = snapshot.data!.docs[index];
-
                       return WallPost(
-                        message: post['Message'],
-                        user: post['UserEmail'],
+                        message: post['Message'] ?? '',
+                        user: post['UserEmail'] ?? 'Anonymous',
                       );
                     },
                   );
@@ -90,8 +78,6 @@ class _HomePageState extends State<HomePage> {
               },
             ),
           ),
-
-         
           Padding(
             padding: const EdgeInsets.all(25.0),
             child: Row(
@@ -103,7 +89,6 @@ class _HomePageState extends State<HomePage> {
                     obscureText: false,
                   ),
                 ),
-
                 IconButton(
                   onPressed: postMessage,
                   icon: const Icon(Icons.arrow_circle_up),
@@ -111,12 +96,11 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-
-          
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
               "Logged in as: ${currentUser.email}",
+              style: const TextStyle(color: Colors.grey),
             ),
           ),
         ],

@@ -22,7 +22,6 @@ class WallPost extends StatelessWidget {
 
       child: Row(
         children: [
-
           // profile icon
           Container(
             decoration: BoxDecoration(
@@ -36,7 +35,7 @@ class WallPost extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 10),
+          const SizedBox(width: 20),
 
           // post content
           Column(

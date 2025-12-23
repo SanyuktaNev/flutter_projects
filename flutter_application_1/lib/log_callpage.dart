@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LogCallPage extends StatefulWidget {
   const LogCallPage({super.key});
@@ -28,19 +29,13 @@ class _LogCallPageState extends State<LogCallPage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-        backgroundColor: const Color(0xFF9C27B0),
-        iconTheme: const IconThemeData(
-         color: Colors.white, // ✅ Back button color
-          ),
+          backgroundColor: const Color(0xFF9C27B0),
+          iconTheme: const IconThemeData(color: Colors.white),
           title: const Text(
             "Log Call",
-            style: TextStyle(
-            color: Colors.white, // ✅ Title text color
-            fontWeight: FontWeight.bold,
-    ),
-  ),
-),
-
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Card(
@@ -101,7 +96,6 @@ class _LogCallPageState extends State<LogCallPage> {
                     value: scheduleNextCall,
                     activeThumbColor: Colors.purple,
                     activeTrackColor: Colors.purple.shade200,
-
                     onChanged: (value) {
                       setState(() {
                         scheduleNextCall = value;
@@ -150,8 +144,6 @@ class _LogCallPageState extends State<LogCallPage> {
       ),
     );
   }
-
-  /// ---------------- HELPERS ----------------
 
   Widget buildTextField({
     required TextEditingController controller,
@@ -211,12 +203,42 @@ class _LogCallPageState extends State<LogCallPage> {
         readOnly: true,
         decoration: inputDecoration(label, icon),
         onTap: () async {
-          TimeOfDay? picked =
-              await showTimePicker(context: context, initialTime: TimeOfDay.now());
+          TimeOfDay? picked = await showTimePicker(
+            context: context,
+            initialTime: TimeOfDay.now(),
+            builder: (BuildContext context, Widget? child) {
+              return Theme(
+                data: ThemeData(
+                  colorScheme: ColorScheme.light(
+                    primary: Colors.purple,    // header background
+                    onPrimary: Colors.white,   // header text
+                    onSurface: Colors.black,   // body text
+                  ),
+                  timePickerTheme: TimePickerThemeData(
+                    hourMinuteTextColor: Colors.black, // hour/minute text
+                    hourMinuteColor: WidgetStateColor.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Colors.purple;        // selected hour/minute box
+                      }
+                      return Colors.transparent;     // unselected
+                    }),
+                    dayPeriodTextColor: Colors.black,  // AM/PM text
+                    dayPeriodColor: WidgetStateColor.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Colors.purple;        // selected AM/PM box
+                      }
+                      return Colors.transparent;     // unselected
+                    }),
+                    dialHandColor: Colors.purple,       // dial hand
+                  ),
+                ),
+                child: child!,
+              );
+            },
+          );
           if (picked != null) {
             if (!mounted) return;
             controller.text = picked.format(context);
-
           }
         },
       ),
@@ -237,7 +259,6 @@ class _LogCallPageState extends State<LogCallPage> {
     );
   }
 
-  /// ---------------- LOCAL STORAGE ----------------
   Future<void> saveCallLocally() async {
     if (nameController.text.trim().isEmpty || mobileController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -246,7 +267,11 @@ class _LogCallPageState extends State<LogCallPage> {
       return;
     }
 
+    final String userId = FirebaseAuth.instance.currentUser!.uid;
+
     final Map<String, dynamic> callData = {
+      "userId": userId,
+      "status": "completed",
       "type": "log",
       "name": nameController.text.trim(),
       "mobile": mobileController.text.trim(),
@@ -277,12 +302,11 @@ class _LogCallPageState extends State<LogCallPage> {
     await file.writeAsString(json.encode(allCalls));
 
     if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Call saved locally!")),
+    );
 
-ScaffoldMessenger.of(context).showSnackBar(
-  const SnackBar(content: Text("Call saved locally!")),
-);
-
-    // Clear all fields
+    // Clear fields
     nameController.clear();
     mobileController.clear();
     callDateController.clear();

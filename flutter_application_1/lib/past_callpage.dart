@@ -24,7 +24,7 @@ class _PastCallPageState extends State<PastCallPage> {
 
   Future<void> loadPastCalls() async {
     final directory = await getApplicationDocumentsDirectory();
-    final file = File("${directory.path}/calls.json"); // updated file
+    final file = File("${directory.path}/calls.json");
 
     if (await file.exists()) {
       final content = await file.readAsString();
@@ -35,21 +35,25 @@ class _PastCallPageState extends State<PastCallPage> {
 
         final DateTime today = DateTime.now();
 
-        // Filter past calls (callDate before today)
         final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
         pastCalls = allCalls.where((call) {
-          try {
-            final parts = call['callDate'].split('/');
-            final callDate = DateTime(
-              int.parse(parts[2]),
-              int.parse(parts[1]),
-              int.parse(parts[0]),
-            );
-            return callDate.isBefore(today) && call['userId'] == currentUserId;
-          } catch (e) {
-            return false;
-          }
-        }).toList();
+  try {
+    if (call['userId'] != currentUserId) return false;
+    if (call['status'] != "completed") return false;
+
+    final parts = call['callDate'].split('/');
+    final callDate = DateTime(
+      int.parse(parts[2]),
+      int.parse(parts[1]),
+      int.parse(parts[0]),
+    );
+
+    return callDate.isBefore(today);
+  } catch (e) {
+    return false;
+  }
+}).toList();
+
       }
     }
 
@@ -66,13 +70,13 @@ class _PastCallPageState extends State<PastCallPage> {
             title: const Text(
             "Past Calls",
             style: TextStyle(
-            color: Colors.white, // Title text color
+            color: Colors.white, 
            fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: Colors.purple,
         iconTheme: const IconThemeData(
-         color: Colors.white, // Back button color
+         color: Colors.white, 
   ),
 ),
 

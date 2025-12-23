@@ -3,6 +3,10 @@ import 'package:flutter_application_1/widgets/expandable_fab.dart';
 import 'package:flutter_application_1/log_callpage.dart';
 import 'package:flutter_application_1/schedule_callpage.dart';
 import 'package:flutter_application_1/past_callpage.dart';
+import 'package:flutter_application_1/today_callpage.dart';
+import 'package:flutter_application_1/pending_callpage.dart';
+import 'package:flutter_application_1/calendar_callpage.dart';
+
 
 class CallPage extends StatelessWidget {
   const CallPage({super.key});
@@ -35,12 +39,13 @@ class CallPage extends StatelessWidget {
 ),
 
         body: TabBarView(
-          children: [
-            Center(child: Icon(Icons.call, size: 100, color: Color(0xFF9C27B0))),
-            Center(child: Icon(Icons.call, size: 100, color: Color(0xFF9C27B0))),
-            Center(child: Icon(Icons.call, size: 100, color: Color(0xFF9C27B0))),
-          ],
-        ),
+  children: [
+    TodayCallPage(),
+    PendingCallPage(),
+    CalendarCallPage(),
+  ],
+),
+
         floatingActionButton: ExpandableFab(
           distance: 100,
           children: [

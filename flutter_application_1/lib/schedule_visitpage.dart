@@ -4,19 +4,19 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class ScheduleCallPage extends StatefulWidget {
-  const ScheduleCallPage({super.key});
+class ScheduleVisitPage extends StatefulWidget {
+  const ScheduleVisitPage({super.key});
 
   @override
-  State<ScheduleCallPage> createState() => _ScheduleCallPageState();
+  State<ScheduleVisitPage> createState() => _ScheduleVisitPageState();
 }
 
-class _ScheduleCallPageState extends State<ScheduleCallPage> {
+class _ScheduleVisitPageState extends State<ScheduleVisitPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
-  final TextEditingController callDateController = TextEditingController();
-  final TextEditingController callTimeController = TextEditingController();
-  final TextEditingController postCallCommentController = TextEditingController();
+  final TextEditingController visitDateController = TextEditingController();
+  final TextEditingController visitTimeController = TextEditingController();
+  final TextEditingController postVisitCommentController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
           backgroundColor: Colors.purple,
           iconTheme: const IconThemeData(color: Colors.white),
           title: const Text(
-            "Schedule Call",
+            "Schedule Visit",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
@@ -54,24 +54,24 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
                     keyboardType: TextInputType.number,
                   ),
                   buildDatePicker(
-                    controller: callDateController,
-                    label: "Call Date",
+                    controller: visitDateController,
+                    label: "Visit Date",
                     icon: Icons.calendar_today,
                   ),
                   buildTimePicker(
-                    controller: callTimeController,
-                    label: "Call Time",
+                    controller: visitTimeController,
+                    label: "Visit Time",
                     icon: Icons.access_time,
                   ),
                   buildTextField(
-                    controller: postCallCommentController,
-                    label: "Post Call Comment",
+                    controller: postVisitCommentController,
+                    label: "Post Visit Comment",
                     icon: Icons.comment,
                     maxLines: 3,
                   ),
                   const SizedBox(height: 30),
                   ElevatedButton(
-                    onPressed: saveScheduledCall,
+                    onPressed: saveScheduledVisit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.purple,
                       minimumSize: const Size(double.infinity, 50),
@@ -80,7 +80,7 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
                       ),
                     ),
                     child: const Text(
-                      "Schedule Call",
+                      "Schedule Visit",
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
@@ -156,27 +156,27 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
             builder: (BuildContext context, Widget? child) {
               return Theme(
                 data: ThemeData(
-                  colorScheme: const ColorScheme.light(
-                    primary: Colors.purple,   // header background
-                    onPrimary: Colors.white,  // header text
-                    onSurface: Colors.black,  // body text
+                  colorScheme: ColorScheme.light(
+                    primary: Colors.purple, // header background
+                    onPrimary: Colors.white, // header text
+                    onSurface: Colors.black, // body text
                   ),
                   timePickerTheme: TimePickerThemeData(
-                    hourMinuteTextColor: Colors.black,
+                    hourMinuteTextColor: Colors.black, // hour/minute text
                     hourMinuteColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple; // selected hour/min
+                        return Colors.purple; // selected hour/minute box
                       }
-                      return Colors.transparent;
+                      return Colors.transparent; // unselected
                     }),
-                    dayPeriodTextColor: Colors.black,
+                    dayPeriodTextColor: Colors.black, // AM/PM text
                     dayPeriodColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple; // selected AM/PM
+                        return Colors.purple; // selected AM/PM box
                       }
-                      return Colors.transparent;
+                      return Colors.transparent; // unselected
                     }),
-                    dialHandColor: Colors.purple,
+                    dialHandColor: Colors.purple, // dial hand
                   ),
                 ),
                 child: child!,
@@ -207,9 +207,8 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
   }
 
   /// ---------------- LOCAL STORAGE ----------------
-  Future<void> saveScheduledCall() async {
-    if (nameController.text.trim().isEmpty ||
-        mobileController.text.trim().isEmpty) {
+  Future<void> saveScheduledVisit() async {
+    if (nameController.text.trim().isEmpty || mobileController.text.trim().isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Name and Mobile are required")),
@@ -217,45 +216,45 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
       return;
     }
 
-    final String userId =
-        FirebaseAuth.instance.currentUser?.uid ?? "unknown";
+    final String userId = FirebaseAuth.instance.currentUser?.uid ?? "unknown";
 
-    final Map<String, dynamic> callData = {
+    final Map<String, dynamic> visitData = {
       "userId": userId,
       "status": "scheduled",
       "type": "schedule",
       "name": nameController.text.trim(),
       "mobile": mobileController.text.trim(),
-      "callDate": callDateController.text.trim(),
-      "callTime": callTimeController.text.trim(),
-      "postComment": postCallCommentController.text.trim(),
+      "visitDate": visitDateController.text.trim(),
+      "visitTime": visitTimeController.text.trim(),
+      "postComment": postVisitCommentController.text.trim(),
       "timestamp": DateTime.now().toIso8601String(),
     };
 
     final directory = await getApplicationDocumentsDirectory();
-    final file = File("${directory.path}/calls.json");
+    final file = File("${directory.path}/visits.json");
 
-    List<Map<String, dynamic>> allCalls = [];
+    List<Map<String, dynamic>> allVisits = [];
     if (await file.exists()) {
       final content = await file.readAsString();
       if (content.isNotEmpty) {
         final List<dynamic> jsonData = json.decode(content);
-        allCalls = List<Map<String, dynamic>>.from(jsonData);
+        allVisits = List<Map<String, dynamic>>.from(jsonData);
       }
     }
 
-    allCalls.add(callData);
-    await file.writeAsString(json.encode(allCalls));
+    allVisits.add(visitData);
+    await file.writeAsString(json.encode(allVisits));
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Call scheduled locally!")),
+      const SnackBar(content: Text("Visit scheduled locally!")),
     );
 
+    // Clear fields
     nameController.clear();
     mobileController.clear();
-    callDateController.clear();
-    callTimeController.clear();
-    postCallCommentController.clear();
+    visitDateController.clear();
+    visitTimeController.clear();
+    postVisitCommentController.clear();
   }
 }

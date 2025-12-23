@@ -4,29 +4,35 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class ScheduleCallPage extends StatefulWidget {
-  const ScheduleCallPage({super.key});
+class LogVisitPage extends StatefulWidget {
+  const LogVisitPage({super.key});
 
   @override
-  State<ScheduleCallPage> createState() => _ScheduleCallPageState();
+  State<LogVisitPage> createState() => _LogVisitPageState();
 }
 
-class _ScheduleCallPageState extends State<ScheduleCallPage> {
+class _LogVisitPageState extends State<LogVisitPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
-  final TextEditingController callDateController = TextEditingController();
-  final TextEditingController callTimeController = TextEditingController();
-  final TextEditingController postCallCommentController = TextEditingController();
+  final TextEditingController visitDateController = TextEditingController();
+  final TextEditingController visitTimeController = TextEditingController();
+  final TextEditingController postCommentController = TextEditingController();
+  final TextEditingController nextVisitDateController = TextEditingController();
+  final TextEditingController nextVisitTimeController = TextEditingController();
+  final TextEditingController preVisitCommentController = TextEditingController();
+
+  String? visitOutcome;
+  bool scheduleNextVisit = false;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.purple,
+          backgroundColor: const Color(0xFF9C27B0),
           iconTheme: const IconThemeData(color: Colors.white),
           title: const Text(
-            "Schedule Call",
+            "Log Visit",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
@@ -34,12 +40,11 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
           padding: const EdgeInsets.all(16),
           child: Card(
             elevation: 10,
-            shadowColor: Colors.black26,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
                   buildTextField(
@@ -53,34 +58,81 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
                     icon: Icons.smartphone,
                     keyboardType: TextInputType.number,
                   ),
+                  DropdownButtonFormField<String>(
+                    decoration: inputDecoration("Visit Outcome", Icons.check_circle),
+                    initialValue: visitOutcome,
+                    items: const [
+                      DropdownMenuItem(value: "Connected", child: Text("Connected")),
+                      DropdownMenuItem(value: "Busy", child: Text("Busy")),
+                      DropdownMenuItem(value: "Not Answered", child: Text("Not Answered")),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        visitOutcome = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
                   buildDatePicker(
-                    controller: callDateController,
-                    label: "Call Date",
+                    controller: visitDateController,
+                    label: "Visit Date",
                     icon: Icons.calendar_today,
+                    lastDate: DateTime.now(),
                   ),
                   buildTimePicker(
-                    controller: callTimeController,
-                    label: "Call Time",
+                    controller: visitTimeController,
+                    label: "Visit Time",
                     icon: Icons.access_time,
                   ),
                   buildTextField(
-                    controller: postCallCommentController,
-                    label: "Post Call Comment",
+                    controller: postCommentController,
+                    label: "Post Visit Comment",
                     icon: Icons.comment,
                     maxLines: 3,
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    title: const Text("Schedule next visit?"),
+                    value: scheduleNextVisit,
+                    activeThumbColor: Colors.purple,
+                    activeTrackColor: Colors.purple.shade200,
+                    onChanged: (value) {
+                      setState(() {
+                        scheduleNextVisit = value;
+                      });
+                    },
+                  ),
+                  if (scheduleNextVisit) ...[
+                    buildDatePicker(
+                      controller: nextVisitDateController,
+                      label: "Next Visit Date",
+                      icon: Icons.calendar_month,
+                      firstDate: DateTime.now(),
+                    ),
+                    buildTimePicker(
+                      controller: nextVisitTimeController,
+                      label: "Next Visit Time",
+                      icon: Icons.access_time,
+                    ),
+                    buildTextField(
+                      controller: preVisitCommentController,
+                      label: "Pre Visit Comment",
+                      icon: Icons.note,
+                      maxLines: 2,
+                    ),
+                  ],
+                  const SizedBox(height: 25),
                   ElevatedButton(
-                    onPressed: saveScheduledCall,
+                    onPressed: saveVisitLocally,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
+                      backgroundColor: const Color(0xFF9C27B0),
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: const Text(
-                      "Schedule Call",
+                      "Save Visit",
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
@@ -115,6 +167,8 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    DateTime? firstDate,
+    DateTime? lastDate,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -126,11 +180,10 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
           DateTime? picked = await showDatePicker(
             context: context,
             initialDate: DateTime.now(),
-            firstDate: DateTime.now(),
-            lastDate: DateTime(2100),
+            firstDate: firstDate ?? DateTime(2000),
+            lastDate: lastDate ?? DateTime(2100),
           );
           if (picked != null) {
-            if (!mounted) return;
             controller.text = "${picked.day}/${picked.month}/${picked.year}";
           }
         },
@@ -157,22 +210,22 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
               return Theme(
                 data: ThemeData(
                   colorScheme: const ColorScheme.light(
-                    primary: Colors.purple,   // header background
-                    onPrimary: Colors.white,  // header text
-                    onSurface: Colors.black,  // body text
+                    primary: Colors.purple,    // header background
+                    onPrimary: Colors.white,   // header text
+                    onSurface: Colors.black,   // body text
                   ),
                   timePickerTheme: TimePickerThemeData(
                     hourMinuteTextColor: Colors.black,
                     hourMinuteColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple; // selected hour/min
+                        return Colors.purple; // selected hour/minute box
                       }
                       return Colors.transparent;
                     }),
                     dayPeriodTextColor: Colors.black,
                     dayPeriodColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple; // selected AM/PM
+                        return Colors.purple; // selected AM/PM box
                       }
                       return Colors.transparent;
                     }),
@@ -183,6 +236,7 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
               );
             },
           );
+
           if (picked != null) {
             if (!mounted) return;
             controller.text = picked.format(context);
@@ -206,34 +260,38 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
     );
   }
 
-  /// ---------------- LOCAL STORAGE ----------------
-  Future<void> saveScheduledCall() async {
-    if (nameController.text.trim().isEmpty ||
-        mobileController.text.trim().isEmpty) {
-      if (!mounted) return;
+  Future<void> saveVisitLocally() async {
+    if (nameController.text.trim().isEmpty || mobileController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Name and Mobile are required")),
       );
       return;
     }
 
-    final String userId =
-        FirebaseAuth.instance.currentUser?.uid ?? "unknown";
+    final String userId = FirebaseAuth.instance.currentUser!.uid;
 
     final Map<String, dynamic> callData = {
       "userId": userId,
-      "status": "scheduled",
-      "type": "schedule",
+      "status": "completed",
+      "type": "log",
       "name": nameController.text.trim(),
       "mobile": mobileController.text.trim(),
-      "callDate": callDateController.text.trim(),
-      "callTime": callTimeController.text.trim(),
-      "postComment": postCallCommentController.text.trim(),
+      "visitOutcome": visitOutcome,
+      "visitDate": visitDateController.text.trim(),
+      "visitTime": visitTimeController.text.trim(),
+      "postComment": postCommentController.text.trim(),
+      "scheduleNextVisit": scheduleNextVisit,
+      "nextVisitDate":
+          scheduleNextVisit ? nextVisitDateController.text.trim() : null,
+      "nextVisitTime":
+          scheduleNextVisit ? nextVisitTimeController.text.trim() : null,
+      "preVisitComment":
+          scheduleNextVisit ? preVisitCommentController.text.trim() : null,
       "timestamp": DateTime.now().toIso8601String(),
     };
 
     final directory = await getApplicationDocumentsDirectory();
-    final file = File("${directory.path}/calls.json");
+    final file = File("${directory.path}/visits.json");
 
     List<Map<String, dynamic>> allCalls = [];
     if (await file.exists()) {
@@ -248,14 +306,22 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
     await file.writeAsString(json.encode(allCalls));
 
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Call scheduled locally!")),
+      const SnackBar(content: Text("Visit saved locally!")),
     );
 
     nameController.clear();
     mobileController.clear();
-    callDateController.clear();
-    callTimeController.clear();
-    postCallCommentController.clear();
+    visitDateController.clear();
+    visitTimeController.clear();
+    postCommentController.clear();
+    nextVisitDateController.clear();
+    nextVisitTimeController.clear();
+    preVisitCommentController.clear();
+    setState(() {
+      visitOutcome = null;
+      scheduleNextVisit = false;
+    });
   }
 }

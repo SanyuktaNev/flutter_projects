@@ -18,42 +18,37 @@ class _RegisterPageState extends State<RegisterPage> {
   final confirmPasswordTextController = TextEditingController();
 
   void signUp() async {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(
+      child: CircularProgressIndicator(),
+    ),
+  );
 
-    // show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+  if (passwordTextController.text.trim() !=
+      confirmPasswordTextController.text.trim()) {
+    if (mounted) Navigator.pop(context); // close loading dialog
+    displayMessage("Passwords don't match");
+    return;
+  }
+
+  try {
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: emailTextController.text.trim(),
+      password: passwordTextController.text.trim(),
     );
 
-    // check passwords
-    if (passwordTextController.text != confirmPasswordTextController.text) {
-      Navigator.pop(context);
-      displayMessage("Passwords don't match");
-      return;
-    }
+    if (!mounted) return;
+    Navigator.pop(context); // only close loading dialog
 
-    try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailTextController.text,
-        password: passwordTextController.text,
-      );
-
-      // VERY IMPORTANT
-      if (!mounted) return;
-
-      Navigator.pop(context); // close loading dialog
-
-    } on FirebaseAuthException catch (e) {
-
-      if (!mounted) return;
-
-      Navigator.pop(context); // close loading dialog
-      displayMessage(e.code);
-    }
+    // NO Navigator.pop here! AuthPage will automatically show HomePage
+  } on FirebaseAuthException catch (e) {
+    if (!mounted) return;
+    Navigator.pop(context); // close loading dialog
+    displayMessage(e.message ?? e.code);
   }
+}
 
   void displayMessage(String message) {
     if (!mounted) return;

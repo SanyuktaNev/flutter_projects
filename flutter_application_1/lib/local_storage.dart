@@ -3,31 +3,34 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 class LocalStorage {
-  static Future<File> _getFile() async {
+  /// Get file reference based on filename (default: calls.json)
+  static Future<File> _getFile({String fileName = "calls.json"}) async {
     final dir = await getApplicationDocumentsDirectory();
-    return File('${dir.path}/calls.json');
+    return File('${dir.path}/$fileName');
   }
 
-  // Save a new call
-  static Future<void> saveCall(Map<String, dynamic> callData) async {
-    final file = await _getFile();
+  /// Save a new record (call or visit)
+  static Future<void> saveRecord(Map<String, dynamic> data,
+      {String fileName = "calls.json"}) async {
+    final file = await _getFile(fileName: fileName);
 
-    List<Map<String, dynamic>> calls = [];
+    List<Map<String, dynamic>> records = [];
 
     if (await file.exists()) {
       String content = await file.readAsString();
       if (content.isNotEmpty) {
-        calls = List<Map<String, dynamic>>.from(jsonDecode(content));
+        records = List<Map<String, dynamic>>.from(jsonDecode(content));
       }
     }
 
-    calls.add(callData);
-    await file.writeAsString(jsonEncode(calls));
+    records.add(data);
+    await file.writeAsString(jsonEncode(records));
   }
 
-  // Load all calls
-  static Future<List<Map<String, dynamic>>> loadCalls() async {
-    final file = await _getFile();
+  /// Load all records (calls or visits)
+  static Future<List<Map<String, dynamic>>> loadRecords(
+      {String fileName = "calls.json"}) async {
+    final file = await _getFile(fileName: fileName);
 
     if (!await file.exists()) return [];
 
