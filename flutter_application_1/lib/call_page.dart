@@ -1,31 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/widgets/expandable_fab.dart';
 import 'package:flutter_application_1/log_callpage.dart';
 import 'package:flutter_application_1/schedule_callpage.dart';
 import 'package:flutter_application_1/past_callpage.dart';
 import 'package:flutter_application_1/today_callpage.dart';
 import 'package:flutter_application_1/pending_callpage.dart';
 import 'package:flutter_application_1/calendar_callpage.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:flutter_application_1/welcome_screen.dart';
 
-
-class CallPage extends StatelessWidget {
+class CallPage extends StatefulWidget {
   const CallPage({super.key});
 
   @override
+  State<CallPage> createState() => _CallPageState();
+}
+
+class _CallPageState extends State<CallPage> {
+  
+  @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-        backgroundColor: const Color(0xFF9C27B0),
-        title: const Text(
-        "Call Tabs",
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(
-        color: Colors.white, // ✅ Back button color
-      ),
+  length: 3,
+  child: Scaffold(
+    appBar: AppBar(
+  backgroundColor: const Color(0xFF9C27B0),
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () {
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+    (route) => false, // removes all previous routes
+  );
+},
+
+  ),
+  title: const Text(
+    "Call Tabs",
+    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+  ),
+  centerTitle: true,
+  iconTheme: const IconThemeData(color: Colors.white),
   bottom: const TabBar(
     indicatorColor: Colors.white,
     labelColor: Colors.white,
@@ -38,41 +53,67 @@ class CallPage extends StatelessWidget {
   ),
 ),
 
-        body: TabBarView(
-  children: [
-    TodayCallPage(),
-    PendingCallPage(),
-    CalendarCallPage(),
-  ],
-),
+    body: const TabBarView(
+      children: [
+        TodayCallPage(),
+        PendingCallPage(),
+        CalendarCallPage(),
+      ],
+    ),
 
-        floatingActionButton: ExpandableFab(
-          distance: 100,
-          children: [
-            ActionButton(
-              icon: const Icon(Icons.call),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const LogCallPage()),
+    floatingActionButton: SpeedDial(
+            icon: Icons.add,
+            foregroundColor: Colors.white,
+            activeIcon: Icons.close,
+            backgroundColor: Colors.purple,
+            overlayOpacity: 0.3,
+            children: [
+              SpeedDialChild(
+                child: const Icon(Icons.table_view, color: Colors.white),
+                backgroundColor: Colors.purple,
+                label: 'Log Call',
+                onTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LogCallPage()),
+                    (route) => false,
+                  );
+                },
               ),
-            ),
-            ActionButton(
-              icon: const Icon(Icons.calendar_month),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ScheduleCallPage()),
+              SpeedDialChild(
+                child: const Icon(Icons.apartment, color: Colors.white),
+                backgroundColor: Colors.purple,
+                label: 'Schedule Call',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ScheduleCallPage(
+                            )),
+                  );
+                },
               ),
-            ),
-            ActionButton(
-              icon: const Icon(Icons.history),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PastCallPage()),
+              SpeedDialChild(
+                child:
+                    const Icon(Icons.menu_book_outlined, color: Colors.white),
+                backgroundColor: Colors.purple,
+                label: 'Past Call',
+                onTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PastCallPage(
+                            )),
+                    (route) => false,
+                  );
+                },
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+              
+            ],
+          )
+  ),
+);
+
   }
 }

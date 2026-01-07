@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/call_page.dart';
 
 class LogCallPage extends StatefulWidget {
   const LogCallPage({super.key});
@@ -23,6 +24,7 @@ class _LogCallPageState extends State<LogCallPage> {
 
   String? callOutcome;
   bool scheduleNextCall = false;
+  bool isSaving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -30,113 +32,135 @@ class _LogCallPageState extends State<LogCallPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF9C27B0),
-          iconTheme: const IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const CallPage()),
+                (route) => false,
+              );
+            },
+          ),
           title: const Text(
             "Log Call",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Card(
-            elevation: 10,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  buildTextField(
-                    controller: nameController,
-                    label: "Person Name",
-                    icon: Icons.person_outline,
-                  ),
-                  buildTextField(
-                    controller: mobileController,
-                    label: "Mobile Number",
-                    icon: Icons.smartphone,
-                    keyboardType: TextInputType.number,
-                  ),
-                  DropdownButtonFormField<String>(
-                    decoration: inputDecoration("Call Outcome", Icons.check_circle),
-                    initialValue: callOutcome,
-                    items: const [
-                      DropdownMenuItem(value: "Connected", child: Text("Connected")),
-                      DropdownMenuItem(value: "Busy", child: Text("Busy")),
-                      DropdownMenuItem(value: "Not Answered", child: Text("Not Answered")),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        callOutcome = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  buildDatePicker(
-                    controller: callDateController,
-                    label: "Call Date",
-                    icon: Icons.calendar_today,
-                    lastDate: DateTime.now(),
-                  ),
-                  buildTimePicker(
-                    controller: callTimeController,
-                    label: "Call Time",
-                    icon: Icons.access_time,
-                  ),
-                  buildTextField(
-                    controller: postCommentController,
-                    label: "Post Call Comment",
-                    icon: Icons.comment,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 10),
-                  SwitchListTile(
-                    title: const Text("Schedule next call?"),
-                    value: scheduleNextCall,
-                    activeThumbColor: Colors.purple,
-                    activeTrackColor: Colors.purple.shade200,
-                    onChanged: (value) {
-                      setState(() {
-                        scheduleNextCall = value;
-                      });
-                    },
-                  ),
-                  if (scheduleNextCall) ...[
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    buildTextField(
+                      controller: nameController,
+                      label: "Person Name",
+                      icon: Icons.person_outline,
+                    ),
+                    buildTextField(
+                      controller: mobileController,
+                      label: "Mobile Number",
+                      icon: Icons.smartphone,
+                      keyboardType: TextInputType.number,
+                    ),
+                    DropdownButtonFormField<String>(
+                      decoration: inputDecoration("Call Outcome", Icons.check_circle),
+                      initialValue: callOutcome,
+                      items: const [
+                        DropdownMenuItem(value: "Connected", child: Text("Connected")),
+                        DropdownMenuItem(value: "Busy", child: Text("Busy")),
+                        DropdownMenuItem(value: "Not Answered", child: Text("Not Answered")),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          callOutcome = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
                     buildDatePicker(
-                      controller: nextCallDateController,
-                      label: "Next Call Date",
-                      icon: Icons.calendar_month,
-                      firstDate: DateTime.now(),
+                      controller: callDateController,
+                      label: "Call Date",
+                      icon: Icons.calendar_today,
+                      lastDate: DateTime.now(),
                     ),
                     buildTimePicker(
-                      controller: nextCallTimeController,
-                      label: "Next Call Time",
+                      controller: callTimeController,
+                      label: "Call Time",
                       icon: Icons.access_time,
                     ),
                     buildTextField(
-                      controller: preCallCommentController,
-                      label: "Pre Call Comment",
-                      icon: Icons.note,
-                      maxLines: 2,
+                      controller: postCommentController,
+                      label: "Post Call Comment",
+                      icon: Icons.comment,
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 10),
+                    SwitchListTile(
+                      title: const Text("Schedule next call?"),
+                      value: scheduleNextCall,
+                      activeThumbColor: Colors.purple,
+                      activeTrackColor: Colors.purple.shade200,
+                      onChanged: (value) {
+                        setState(() {
+                          scheduleNextCall = value;
+                        });
+                      },
+                    ),
+                    if (scheduleNextCall) ...[
+                      buildDatePicker(
+                        controller: nextCallDateController,
+                        label: "Next Call Date",
+                        icon: Icons.calendar_month,
+                        firstDate: DateTime.now(),
+                      ),
+                      buildTimePicker(
+                        controller: nextCallTimeController,
+                        label: "Next Call Time",
+                        icon: Icons.access_time,
+                      ),
+                      buildTextField(
+                        controller: preCallCommentController,
+                        label: "Pre Call Comment",
+                        icon: Icons.note,
+                        maxLines: 2,
+                      ),
+                    ],
+                    const SizedBox(height: 25),
+                    // ✅ Updated Save Call Button with loading indicator
+                    ElevatedButton(
+                      onPressed: isSaving ? null : saveCallLocally,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF9C27B0),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: isSaving
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              "Save Call",
+                              style: TextStyle(color: Colors.white, fontSize: 18),
+                            ),
                     ),
                   ],
-                  const SizedBox(height: 25),
-                  ElevatedButton(
-                    onPressed: saveCallLocally,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9C27B0),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Save Call",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -190,8 +214,7 @@ class _LogCallPageState extends State<LogCallPage> {
       ),
     );
   }
-
-  Widget buildTimePicker({
+ Widget buildTimePicker({
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -209,27 +232,27 @@ class _LogCallPageState extends State<LogCallPage> {
             builder: (BuildContext context, Widget? child) {
               return Theme(
                 data: ThemeData(
-                  colorScheme: ColorScheme.light(
-                    primary: Colors.purple,    // header background
-                    onPrimary: Colors.white,   // header text
-                    onSurface: Colors.black,   // body text
+                  colorScheme: const ColorScheme.light(
+                    primary: Colors.purple,   // header background
+                    onPrimary: Colors.white,  // header text
+                    onSurface: Colors.black,  // body text
                   ),
                   timePickerTheme: TimePickerThemeData(
-                    hourMinuteTextColor: Colors.black, // hour/minute text
+                    hourMinuteTextColor: Colors.black,
                     hourMinuteColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple;        // selected hour/minute box
+                        return Colors.purple; // selected hour/min
                       }
-                      return Colors.transparent;     // unselected
+                      return Colors.transparent;
                     }),
-                    dayPeriodTextColor: Colors.black,  // AM/PM text
+                    dayPeriodTextColor: Colors.black,
                     dayPeriodColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple;        // selected AM/PM box
+                        return Colors.purple; // selected AM/PM
                       }
-                      return Colors.transparent;     // unselected
+                      return Colors.transparent;
                     }),
-                    dialHandColor: Colors.purple,       // dial hand
+                    dialHandColor: Colors.purple,
                   ),
                 ),
                 child: child!,
@@ -244,7 +267,6 @@ class _LogCallPageState extends State<LogCallPage> {
       ),
     );
   }
-
   InputDecoration inputDecoration(String label, IconData icon) {
     return InputDecoration(
       prefixIcon: Icon(icon, color: Colors.purple),
@@ -259,14 +281,18 @@ class _LogCallPageState extends State<LogCallPage> {
     );
   }
 
-  Future<void> saveCallLocally() async {
-    if (nameController.text.trim().isEmpty || mobileController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Name and Mobile are required")),
-      );
-      return;
-    }
+ Future<void> saveCallLocally() async {
+  if (nameController.text.trim().isEmpty ||
+      mobileController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Name and Mobile are required")),
+    );
+    return;
+  }
 
+  setState(() => isSaving = true);
+
+  try {
     final String userId = FirebaseAuth.instance.currentUser!.uid;
 
     final Map<String, dynamic> callData = {
@@ -280,9 +306,12 @@ class _LogCallPageState extends State<LogCallPage> {
       "callTime": callTimeController.text.trim(),
       "postComment": postCommentController.text.trim(),
       "scheduleNextCall": scheduleNextCall,
-      "nextCallDate": scheduleNextCall ? nextCallDateController.text.trim() : null,
-      "nextCallTime": scheduleNextCall ? nextCallTimeController.text.trim() : null,
-      "preCallComment": scheduleNextCall ? preCallCommentController.text.trim() : null,
+      "nextCallDate":
+          scheduleNextCall ? nextCallDateController.text.trim() : null,
+      "nextCallTime":
+          scheduleNextCall ? nextCallTimeController.text.trim() : null,
+      "preCallComment":
+          scheduleNextCall ? preCallCommentController.text.trim() : null,
       "timestamp": DateTime.now().toIso8601String(),
     };
 
@@ -293,8 +322,7 @@ class _LogCallPageState extends State<LogCallPage> {
     if (await file.exists()) {
       final content = await file.readAsString();
       if (content.isNotEmpty) {
-        final List<dynamic> jsonData = json.decode(content);
-        allCalls = List<Map<String, dynamic>>.from(jsonData);
+        allCalls = List<Map<String, dynamic>>.from(json.decode(content));
       }
     }
 
@@ -302,6 +330,7 @@ class _LogCallPageState extends State<LogCallPage> {
     await file.writeAsString(json.encode(allCalls));
 
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Call saved locally!")),
     );
@@ -315,9 +344,19 @@ class _LogCallPageState extends State<LogCallPage> {
     nextCallDateController.clear();
     nextCallTimeController.clear();
     preCallCommentController.clear();
+
     setState(() {
       callOutcome = null;
       scheduleNextCall = false;
     });
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Failed to save call")),
+    );
+  } finally {
+    if (mounted) {
+      setState(() => isSaving = false);
+    }
   }
+}
 }

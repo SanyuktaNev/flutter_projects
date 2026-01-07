@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -29,12 +29,19 @@ class _LogVisitPageState extends State<LogVisitPage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF9C27B0),
-          iconTheme: const IconThemeData(color: Colors.white),
-          title: const Text(
+          backgroundColor: Colors.purple,
+           iconTheme: const IconThemeData(
+            color: Colors.white, // ✅ Back button color
+            ),
+         title: const Text(
             "Log Visit",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+          style: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+  ),
+),
+
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -48,35 +55,18 @@ class _LogVisitPageState extends State<LogVisitPage> {
               child: Column(
                 children: [
                   buildTextField(
-                    controller: nameController,
-                    label: "Person Name",
-                    icon: Icons.person_outline,
-                  ),
+                      nameController, "Person Name", Icons.person_outline),
                   buildTextField(
-                    controller: mobileController,
-                    label: "Mobile Number",
-                    icon: Icons.smartphone,
+                    mobileController,
+                    "Mobile Number",
+                    Icons.smartphone,
                     keyboardType: TextInputType.number,
                   ),
-                  DropdownButtonFormField<String>(
-                    decoration: inputDecoration("Visit Outcome", Icons.check_circle),
-                    initialValue: visitOutcome,
-                    items: const [
-                      DropdownMenuItem(value: "Connected", child: Text("Connected")),
-                      DropdownMenuItem(value: "Busy", child: Text("Busy")),
-                      DropdownMenuItem(value: "Not Answered", child: Text("Not Answered")),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        visitOutcome = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
+                  buildDropdown(),
                   buildDatePicker(
-                    controller: visitDateController,
-                    label: "Visit Date",
-                    icon: Icons.calendar_today,
+                    visitDateController,
+                    "Visit Date",
+                    Icons.calendar_today,
                     lastDate: DateTime.now(),
                   ),
                   buildTimePicker(
@@ -85,28 +75,22 @@ class _LogVisitPageState extends State<LogVisitPage> {
                     icon: Icons.access_time,
                   ),
                   buildTextField(
-                    controller: postCommentController,
-                    label: "Post Visit Comment",
-                    icon: Icons.comment,
+                    postCommentController,
+                    "Post Visit Comment",
+                    Icons.comment,
                     maxLines: 3,
                   ),
-                  const SizedBox(height: 10),
                   SwitchListTile(
                     title: const Text("Schedule next visit?"),
                     value: scheduleNextVisit,
-                    activeThumbColor: Colors.purple,
-                    activeTrackColor: Colors.purple.shade200,
-                    onChanged: (value) {
-                      setState(() {
-                        scheduleNextVisit = value;
-                      });
-                    },
+                    onChanged: (value) =>
+                        setState(() => scheduleNextVisit = value),
                   ),
                   if (scheduleNextVisit) ...[
                     buildDatePicker(
-                      controller: nextVisitDateController,
-                      label: "Next Visit Date",
-                      icon: Icons.calendar_month,
+                      nextVisitDateController,
+                      "Next Visit Date",
+                      Icons.calendar_month,
                       firstDate: DateTime.now(),
                     ),
                     buildTimePicker(
@@ -115,9 +99,9 @@ class _LogVisitPageState extends State<LogVisitPage> {
                       icon: Icons.access_time,
                     ),
                     buildTextField(
-                      controller: preVisitCommentController,
-                      label: "Pre Visit Comment",
-                      icon: Icons.note,
+                      preVisitCommentController,
+                      "Pre Visit Comment",
+                      Icons.note,
                       maxLines: 2,
                     ),
                   ],
@@ -125,15 +109,13 @@ class _LogVisitPageState extends State<LogVisitPage> {
                   ElevatedButton(
                     onPressed: saveVisitLocally,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9C27B0),
+                      backgroundColor: Colors.purple,
                       minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
                     child: const Text(
                       "Save Visit",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style:
+                          TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
                 ],
@@ -145,13 +127,12 @@ class _LogVisitPageState extends State<LogVisitPage> {
     );
   }
 
-  Widget buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-  }) {
+  // ---------------- helpers unchanged ----------------
+
+  Widget buildTextField(TextEditingController controller, String label,
+      IconData icon,
+      {TextInputType keyboardType = TextInputType.text,
+      int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: TextField(
@@ -163,13 +144,26 @@ class _LogVisitPageState extends State<LogVisitPage> {
     );
   }
 
-  Widget buildDatePicker({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    DateTime? firstDate,
-    DateTime? lastDate,
-  }) {
+  Widget buildDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: DropdownButtonFormField<String>(
+        decoration: inputDecoration("Visit Outcome", Icons.check_circle),
+        initialValue: visitOutcome,
+        items: const [
+          DropdownMenuItem(value: "Connected", child: Text("Connected")),
+          DropdownMenuItem(value: "Busy", child: Text("Busy")),
+          DropdownMenuItem(
+              value: "Not Answered", child: Text("Not Answered")),
+        ],
+        onChanged: (val) => setState(() => visitOutcome = val),
+      ),
+    );
+  }
+
+  Widget buildDatePicker(TextEditingController controller, String label,
+      IconData icon,
+      {DateTime? firstDate, DateTime? lastDate}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: TextField(
@@ -184,7 +178,8 @@ class _LogVisitPageState extends State<LogVisitPage> {
             lastDate: lastDate ?? DateTime(2100),
           );
           if (picked != null) {
-            controller.text = "${picked.day}/${picked.month}/${picked.year}";
+            controller.text =
+                "${picked.day}/${picked.month}/${picked.year}";
           }
         },
       ),
@@ -210,22 +205,22 @@ class _LogVisitPageState extends State<LogVisitPage> {
               return Theme(
                 data: ThemeData(
                   colorScheme: const ColorScheme.light(
-                    primary: Colors.purple,    // header background
-                    onPrimary: Colors.white,   // header text
-                    onSurface: Colors.black,   // body text
+                    primary: Colors.purple,   // header background
+                    onPrimary: Colors.white,  // header text
+                    onSurface: Colors.black,  // body text
                   ),
                   timePickerTheme: TimePickerThemeData(
                     hourMinuteTextColor: Colors.black,
                     hourMinuteColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple; // selected hour/minute box
+                        return Colors.purple; // selected hour/min
                       }
                       return Colors.transparent;
                     }),
                     dayPeriodTextColor: Colors.black,
                     dayPeriodColor: WidgetStateColor.resolveWith((states) {
                       if (states.contains(WidgetState.selected)) {
-                        return Colors.purple; // selected AM/PM box
+                        return Colors.purple; // selected AM/PM
                       }
                       return Colors.transparent;
                     }),
@@ -236,7 +231,6 @@ class _LogVisitPageState extends State<LogVisitPage> {
               );
             },
           );
-
           if (picked != null) {
             if (!mounted) return;
             controller.text = picked.format(context);
@@ -253,24 +247,22 @@ class _LogVisitPageState extends State<LogVisitPage> {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.purple, width: 2),
-        borderRadius: BorderRadius.circular(12),
-      ),
     );
   }
 
   Future<void> saveVisitLocally() async {
-    if (nameController.text.trim().isEmpty || mobileController.text.trim().isEmpty) {
+    if (nameController.text.isEmpty ||
+        mobileController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Name and Mobile are required")),
       );
       return;
     }
 
-    final String userId = FirebaseAuth.instance.currentUser!.uid;
+    final String userId =
+        FirebaseAuth.instance.currentUser?.uid ?? "unknown";
 
-    final Map<String, dynamic> callData = {
+    final Map<String, dynamic> visitData = {
       "userId": userId,
       "status": "completed",
       "type": "log",
@@ -282,35 +274,40 @@ class _LogVisitPageState extends State<LogVisitPage> {
       "postComment": postCommentController.text.trim(),
       "scheduleNextVisit": scheduleNextVisit,
       "nextVisitDate":
-          scheduleNextVisit ? nextVisitDateController.text.trim() : null,
+          scheduleNextVisit ? nextVisitDateController.text : null,
       "nextVisitTime":
-          scheduleNextVisit ? nextVisitTimeController.text.trim() : null,
+          scheduleNextVisit ? nextVisitTimeController.text : null,
       "preVisitComment":
-          scheduleNextVisit ? preVisitCommentController.text.trim() : null,
+          scheduleNextVisit ? preVisitCommentController.text : null,
       "timestamp": DateTime.now().toIso8601String(),
     };
 
     final directory = await getApplicationDocumentsDirectory();
     final file = File("${directory.path}/visits.json");
+    List<Map<String, dynamic>> allVisits = [];
 
-    List<Map<String, dynamic>> allCalls = [];
     if (await file.exists()) {
       final content = await file.readAsString();
       if (content.isNotEmpty) {
-        final List<dynamic> jsonData = json.decode(content);
-        allCalls = List<Map<String, dynamic>>.from(jsonData);
+        allVisits =
+            List<Map<String, dynamic>>.from(json.decode(content));
       }
     }
 
-    allCalls.add(callData);
-    await file.writeAsString(json.encode(allCalls));
+    allVisits.add(visitData);
+    await file.writeAsString(json.encode(allVisits));
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Visit saved locally!")),
-    );
+ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(content: Text("Visit saved locally!")),
+);
 
+
+    _clearFields();
+  }
+
+  void _clearFields() {
     nameController.clear();
     mobileController.clear();
     visitDateController.clear();

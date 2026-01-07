@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-
-import 'welcome_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_screen.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String? userId;
+  const ProfilePage({super.key, this.userId});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -21,86 +21,168 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController genderController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
 
-  File? profileImageFile; // store local image
+  File? profileImageFile;
   bool isLoading = true;
+  bool isSaving = false;
+  bool isImageUploading = false;
+
+  String? actualUserId;
 
   @override
   void initState() {
     super.initState();
-    fetchUserData();
+    _initializeUserId();
   }
 
+  Future<void> _initializeUserId() async {
+  setState(() => isLoading = true);
+
+  if (widget.userId != null && widget.userId!.isNotEmpty) {
+    actualUserId = widget.userId;
+  } else {
+    final prefs = await SharedPreferences.getInstance();
+
+    // ✅ FIX: use stored UID
+    final uid = prefs.getInt("uid");
+    actualUserId = uid?.toString();
+  }
+
+  if (actualUserId != null && actualUserId!.isNotEmpty) {
+    await fetchUserData();
+  } else {
+    setState(() => isLoading = false);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("User ID not found. Please login again.")),
+    );
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+}
+
+
   Future<void> fetchUserData() async {
-    String uid = FirebaseAuth.instance.currentUser!.uid;
+    if (actualUserId == null || actualUserId!.isEmpty) {
+      setState(() => isLoading = false);
+      return;
+    }
 
-    DocumentSnapshot doc =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(actualUserId)
+          .get();
 
-    if (doc.exists) {
-      var data = doc.data() as Map<String, dynamic>;
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        File? localImage;
+        
+        if (data['profileImagePath'] != null) {
+          localImage = File(data['profileImagePath']);
+          if (!localImage.existsSync()) localImage = null;
+        }
 
-      // If local image path exists, load it
-      File? localImage;
-      if (data['profileImagePath'] != null) {
-        localImage = File(data['profileImagePath']);
-        if (!localImage.existsSync()) {
-          localImage = null; // file missing
+        setState(() {
+          firstnameController.text = data['firstname'] ?? '';
+          lastnameController.text = data['lastname'] ?? '';
+          emailController.text = data['email'] ?? '';
+          genderController.text = data['gender'] ?? '';
+          cityController.text = data['city'] ?? '';
+          profileImageFile = localImage;
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("User profile not found")),
+          );
         }
       }
-
-      setState(() {
-        firstnameController.text = data['firstname'] ?? '';
-        lastnameController.text = data['lastname'] ?? '';
-        emailController.text = data['email'] ?? '';
-        genderController.text = data['gender'] ?? '';
-        cityController.text = data['city'] ?? '';
-        profileImageFile = localImage;
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        isLoading = false;
-      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      debugPrint("Error fetching profile: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error loading profile: $e")),
+        );
+      }
     }
   }
 
   Future<void> pickAndSaveImage() async {
+    if (actualUserId == null || actualUserId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User ID not available")),
+      );
+      return;
+    }
+
+    setState(() => isImageUploading = true);
+
     final picker = ImagePicker();
-    final XFile? image =
-        await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image == null) {
+      setState(() => isImageUploading = false);
+      return;
+    }
 
-    if (image == null) return;
-
-    // Save image to app's local directory
     final appDir = await getApplicationDocumentsDirectory();
     final savedImage = await File(image.path)
-        .copy('${appDir.path}/${FirebaseAuth.instance.currentUser!.uid}.png');
+        .copy('${appDir.path}/$actualUserId.png');
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(actualUserId)
+        .update({'profileImagePath': savedImage.path});
 
     setState(() {
       profileImageFile = savedImage;
+      isImageUploading = false;
     });
-
-    // Save local path in Firestore
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .update({'profileImagePath': savedImage.path});
   }
 
   Future<void> saveProfileChanges() async {
-    String uid = FirebaseAuth.instance.currentUser!.uid;
+    if (actualUserId == null || actualUserId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User ID not available")),
+      );
+      return;
+    }
 
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      'firstname': firstnameController.text.trim(),
-      'lastname': lastnameController.text.trim(),
-      'gender': genderController.text.trim(),
-      'city': cityController.text.trim(),
-    });
-    
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Profile updated successfully")),
-    );
+    if (isSaving) return;
+    setState(() => isSaving = true);
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(actualUserId)
+          .update({
+        'firstname': firstnameController.text.trim(),
+        'lastname': lastnameController.text.trim(),
+        'gender': genderController.text.trim(),
+        'city': cityController.text.trim(),
+      });
+
+      setState(() => isSaving = false);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile updated successfully")),
+      );
+    } catch (e) {
+      setState(() => isSaving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error updating profile: $e")),
+      );
+    }
   }
 
   @override
@@ -128,16 +210,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 Align(
                   alignment: Alignment.topLeft,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios,
-                        color: Colors.white),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const WelcomeScreen(),
-                        ),
-                      );
-                    },
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -152,11 +226,22 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: pickAndSaveImage,
-                  child: CircleAvatar(
-                    radius: 55,
-                    backgroundImage: profileImageFile != null
-                        ? FileImage(profileImageFile!) as ImageProvider
-                        : const AssetImage('assets/default_avatar.png'),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 55,
+                        backgroundImage: profileImageFile != null
+                            ? FileImage(profileImageFile!)
+                            : const AssetImage('assets/default_avatar.png')
+                                as ImageProvider,
+                      ),
+                      if (isImageUploading)
+                        const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -200,10 +285,20 @@ class _ProfilePageState extends State<ProfilePage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            "Save Changes",
-                            style: TextStyle(color: Colors.white, fontSize: 18),
-                          ),
+                          child: isSaving
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                  ),
+                                )
+                              : const Text(
+                                  "Save Changes",
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 18),
+                                ),
                         ),
                       ],
                     ),

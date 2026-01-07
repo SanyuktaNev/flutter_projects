@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-
-import 'profile_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
+import 'profile_page.dart';
 import 'call_page.dart';
 import 'visit_page.dart';
 import 'task_page.dart';
+import 'services/auth_service.dart';
+import 'lead_status_page.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -36,23 +38,91 @@ class MyDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text('Profile'),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
+              
+              // Get userId from SharedPreferences
+              final prefs = await SharedPreferences.getInstance();
+              final userId = prefs.getString("user_id") ?? "";
+              
+              if (!context.mounted) return;
+              
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
+                MaterialPageRoute(
+                  builder: (context) => ProfilePage(userId: userId),
+                ),
               );
             },
           ),
-
           ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) =>  LoginScreen()),
+  leading: const Icon(Icons.list_alt),
+  title: const Text('Lead Status'),
+  onTap: () {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LeadStatusPage(),
+      ),
+    );
+  },
+),
+
+          Builder(
+            builder: (BuildContext builderContext) {
+              return ListTile(
+                leading: const Icon(Icons.logout, color: Colors.purple),
+                title: const Text('Logout', style: TextStyle(color: Colors.purple)),
+                onTap: () async {
+                  // ✅ Store navigator reference BEFORE any async operations
+                  final navigator = Navigator.of(context, rootNavigator: true);
+                  
+                  Navigator.pop(builderContext); // close drawer
+
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text("Logout"),
+                      content: const Text("Are you sure you want to logout?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(
+                            "Logout",
+                            style: TextStyle(color: Colors.purple),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm != true) return;
+
+                  // 🔄 SHOW LOADER (using stored navigator if context is not mounted)
+                  if (context.mounted) {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    );
+                  }
+
+                  await AuthService.logout();
+
+                  // 🧹 CLOSE LOADER and 🚀 NAVIGATE using stored navigator
+                  navigator.popUntil((route) => route.isFirst); // Clear all dialogs
+                  navigator.pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
               );
             },
           ),
@@ -85,17 +155,17 @@ class Dashboard extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color.fromARGB(0, 243, 239, 239),
         appBar: AppBar(
-  title: const Center(
-    child: Text(
-      "Dashboard",
-      style: TextStyle(color: Colors.white), // ✅ Title text white
-    ),
-  ),
-  backgroundColor: const Color(0xFF9C27B0),
-  iconTheme: const IconThemeData(
-    color: Colors.white, // ✅ Drawer icon (hamburger) color white
-  ),
-),
+          title: const Center(
+            child: Text(
+              "Dashboard",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          backgroundColor: const Color(0xFF9C27B0),
+          iconTheme: const IconThemeData(
+            color: Colors.white,
+          ),
+        ),
 
         drawer: const MyDrawer(),
 

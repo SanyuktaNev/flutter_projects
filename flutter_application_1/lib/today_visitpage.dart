@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,9 +28,7 @@ class _TodayVisitPageState extends State<TodayVisitPage> {
     if (await file.exists()) {
       final content = await file.readAsString();
       if (content.isNotEmpty) {
-        final List<dynamic> jsonData = json.decode(content);
-        final allVisits = List<Map<String, dynamic>>.from(jsonData);
-
+        final allVisits = List<Map<String, dynamic>>.from(json.decode(content));
         final today = DateTime.now();
         final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
 
@@ -57,6 +54,7 @@ class _TodayVisitPageState extends State<TodayVisitPage> {
       }
     }
 
+    if (!mounted) return;
     setState(() => isLoading = false);
   }
 
@@ -76,7 +74,7 @@ class _TodayVisitPageState extends State<TodayVisitPage> {
                       leading: const Icon(Icons.location_on, color: Colors.purple),
                       title: Text(visit['name'] ?? ''),
                       subtitle: Text(
-                        "${visit['mobile']}\n${visit['visitTime']}",
+                        "${visit['mobile'] ?? ''}\n${visit['visitTime'] ?? ''}",
                       ),
                     ),
                   );

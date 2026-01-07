@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/widgets/expandable_fab.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
-import 'package:flutter_application_1/log_visitpage.dart';
-import 'package:flutter_application_1/schedule_visitpage.dart';
-import 'package:flutter_application_1/past_visitpage.dart';
+import 'today_visitpage.dart';
+import 'pending_visitpage.dart';
+import 'calendar_visitpage.dart';
+import 'log_visitpage.dart';
+import 'schedule_visitpage.dart';
+import 'past_visitpage.dart';
 
-import 'package:flutter_application_1/today_visitpage.dart';
-import 'package:flutter_application_1/pending_visitpage.dart';
-import 'package:flutter_application_1/calendar_visitpage.dart';
-
-class VisitPage extends StatelessWidget {
+class VisitPage extends StatefulWidget {
   const VisitPage({super.key});
 
+  @override
+  State<VisitPage> createState() => _VisitPageState();
+}
+
+class _VisitPageState extends State<VisitPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -19,14 +23,18 @@ class VisitPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF9C27B0),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context); // Back to previous screen
+            },
+          ),
           title: const Text(
             "Visit Tabs",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           centerTitle: true,
-          iconTheme: const IconThemeData(
-            color: Colors.white,
-          ),
+          iconTheme: const IconThemeData(color: Colors.white),
           bottom: const TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
@@ -38,8 +46,6 @@ class VisitPage extends StatelessWidget {
             ],
           ),
         ),
-
-        // ✅ EXACT SAME LOGIC AS CALL PAGE
         body: const TabBarView(
           children: [
             TodayVisitPage(),
@@ -47,37 +53,51 @@ class VisitPage extends StatelessWidget {
             CalendarVisitPage(),
           ],
         ),
-
-        // ✅ EXACT SAME EXPANDABLE FAB PATTERN
-        floatingActionButton: ExpandableFab(
-          distance: 100,
+        floatingActionButton: SpeedDial(
+          icon: Icons.add,
+          activeIcon: Icons.close,
+          backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
+          overlayOpacity: 0.3,
           children: [
-            ActionButton(
-              icon: const Icon(Icons.location_on),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LogVisitPage(),
-                ),
-              ),
+            SpeedDialChild(
+              child: const Icon(Icons.location_on, color: Colors.white),
+              backgroundColor: Colors.purple,
+              label: 'Log Visit',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LogVisitPage(),
+                  ),
+                );
+              },
             ),
-            ActionButton(
-              icon: const Icon(Icons.calendar_month),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ScheduleVisitPage(),
-                ),
-              ),
+            SpeedDialChild(
+              child: const Icon(Icons.calendar_month, color: Colors.white),
+              backgroundColor: Colors.purple,
+              label: 'Schedule Visit',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ScheduleVisitPage(),
+                  ),
+                );
+              },
             ),
-            ActionButton(
-              icon: const Icon(Icons.history),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PastVisitPage(),
-                ),
-              ),
+            SpeedDialChild(
+              child: const Icon(Icons.history, color: Colors.white),
+              backgroundColor: Colors.purple,
+              label: 'Past Visit',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PastVisitPage(),
+                  ),
+                );
+              },
             ),
           ],
         ),

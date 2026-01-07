@@ -18,6 +18,9 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
   final TextEditingController callTimeController = TextEditingController();
   final TextEditingController postCallCommentController = TextEditingController();
 
+
+bool isSaving = false;
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -30,7 +33,10 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
-        body: SingleChildScrollView(
+        body: GestureDetector(
+  onTap: () => FocusScope.of(context).unfocus(),
+  child: SingleChildScrollView(
+
           padding: const EdgeInsets.all(16),
           child: Card(
             elevation: 10,
@@ -71,24 +77,35 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
                   ),
                   const SizedBox(height: 30),
                   ElevatedButton(
-                    onPressed: saveScheduledCall,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Schedule Call",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                  ),
+  onPressed: isSaving ? null : saveScheduledCall,
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.purple,
+    minimumSize: const Size(double.infinity, 50),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  child: isSaving
+      ? const SizedBox(
+          height: 24,
+          width: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+      : const Text(
+          "Schedule Call",
+          style: TextStyle(color: Colors.white, fontSize: 18),
+        ),
+),
+
                 ],
               ),
             ),
           ),
         ),
+      ),
       ),
     );
   }
@@ -208,17 +225,19 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
 
   /// ---------------- LOCAL STORAGE ----------------
   Future<void> saveScheduledCall() async {
-    if (nameController.text.trim().isEmpty ||
-        mobileController.text.trim().isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Name and Mobile are required")),
-      );
-      return;
-    }
+  if (nameController.text.trim().isEmpty ||
+      mobileController.text.trim().isEmpty) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Name and Mobile are required")),
+    );
+    return;
+  }
 
-    final String userId =
-        FirebaseAuth.instance.currentUser?.uid ?? "unknown";
+  setState(() => isSaving = true);
+
+  try {
+    final String userId = FirebaseAuth.instance.currentUser?.uid ?? "unknown";
 
     final Map<String, dynamic> callData = {
       "userId": userId,
@@ -239,8 +258,7 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
     if (await file.exists()) {
       final content = await file.readAsString();
       if (content.isNotEmpty) {
-        final List<dynamic> jsonData = json.decode(content);
-        allCalls = List<Map<String, dynamic>>.from(jsonData);
+        allCalls = List<Map<String, dynamic>>.from(json.decode(content));
       }
     }
 
@@ -257,5 +275,15 @@ class _ScheduleCallPageState extends State<ScheduleCallPage> {
     callDateController.clear();
     callTimeController.clear();
     postCallCommentController.clear();
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Failed to schedule call")),
+    );
+  } finally {
+  if (mounted) {
+    setState(() => isSaving = false);
+  }
+  }
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,12 +28,9 @@ class _PendingVisitPageState extends State<PendingVisitPage> {
     if (await file.exists()) {
       final content = await file.readAsString();
       if (content.isNotEmpty) {
-        final List<dynamic> jsonData = json.decode(content);
-        final allVisits = List<Map<String, dynamic>>.from(jsonData);
-
+        final allVisits = List<Map<String, dynamic>>.from(json.decode(content));
         final today = DateTime.now();
         final todayDateOnly = DateTime(today.year, today.month, today.day);
-
         final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
 
         pendingVisits = allVisits.where((visit) {
@@ -58,6 +54,7 @@ class _PendingVisitPageState extends State<PendingVisitPage> {
       }
     }
 
+    if (!mounted) return;
     setState(() => isLoading = false);
   }
 
@@ -73,12 +70,34 @@ class _PendingVisitPageState extends State<PendingVisitPage> {
                 itemBuilder: (_, index) {
                   final visit = pendingVisits[index];
                   return Card(
+                    elevation: 5,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: ListTile(
-                      leading:
-                          const Icon(Icons.location_on, color: Colors.purple),
-                      title: Text(visit['name'] ?? ''),
-                      subtitle: Text(
-                        "${visit['visitDate']}  ${visit['visitTime']}",
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: const Icon(
+                        Icons.location_on,
+                        color: Colors.purple,
+                        size: 40,
+                      ),
+                      title: Text(
+                        visit['name'] ?? 'Unknown',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Visit Date: ${visit['visitDate'] ?? '-'}"),
+                          Text("Visit Time: ${visit['visitTime'] ?? '-'}"),
+                          if (visit['postComment'] != null &&
+                              visit['postComment'].toString().isNotEmpty)
+                            Text("Comment: ${visit['postComment']}"),
+                        ],
                       ),
                     ),
                   );
